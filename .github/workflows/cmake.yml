@@ -1,11 +1,6 @@
 name: CMake Build
 
-on:
-  push:
-    branches:
-      - master
-  pull_request_review:
-    types: [submitted]
+on: [push]
 
 env:
   BUILD_TYPE: Release
