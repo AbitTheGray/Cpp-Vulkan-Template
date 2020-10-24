@@ -16,8 +16,8 @@ Currently tested versions are `1.2.154.0` for Ubuntu (Linux) and `1.2.154.1` for
 
 | Platform | Architecture | Implemenetd | Tested |
 |----------|:------------:|:-----------:|:------:|
-| Windows  | x86_64       | ✓           | ✓      |
-| Windows  | x86          | ✓           | ✓      |
-| Unix     | x86_64       | ✓           | ✓      |
-| Unix     | x86          | ?           |        |
 | Android  | ?            | ✓           |        |
+| Windows  | x86          | ✓           | ✓      |
+| Windows  | x86_64       | ✓           | ✓      |
+| Unix     | x86          | ?           |        |
+| Unix     | x86_64       | ✓           | ✓      |
