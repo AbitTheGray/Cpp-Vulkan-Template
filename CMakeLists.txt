@@ -1,14 +1,25 @@
 cmake_minimum_required(VERSION 3.17)
-project(VulkanHppTest)
+project(Vulkan_Template C CXX)
 
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON) # Just to not corrupt the project's sources
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-if(MINGW AND UNIX) # Enable cross-compilation from Linux for Windows
-    message(NOTICE "MinGW detected, setting compilation for windows")
+cmake_policy(SET CMP0077 NEW) # set() overrides option()
+
+#--------------------------------
+# Debug Options
+#--------------------------------
+
+add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>") # Define DEBUG in Debug builds
+
+#--------------------------------
+# Compiler configuration
+#--------------------------------
+
+if(MINGW)
+    message(NOTICE "MinGW detected, setting compilation to Windows")
     set(WIN32 ON)
 endif()
-
-
 
 #--------------------------------
 # 32-bit / 64-bit detection
@@ -50,91 +61,33 @@ COMPILE_TIME_ASSERT(sizeof(void*), 8) // SIZEOF_VOID_P 8
     message(NOTICE "CMAKE_SIZEOF_VOID_P: ${CMAKE_SIZEOF_VOID_P}")
 endif()
 
-
-
 #--------------------------------
-# Vulkan
+# External libraries
 #--------------------------------
 
-if(WIN32)
-
-    if(NOT DEFINED ENV{VULKAN_SDK})
-        message(FATAL_ERROR "Environment variable VULKAN_SDK is not defined")
-    endif()
-    if(NOT IS_DIRECTORY "$ENV{VULKAN_SDK}")
-        message(FATAL_ERROR "Environment variable VULKAN_SDK does not point to valid directory, it points to '$ENV{VULKAN_SDK}'")
-    endif()
-
-    if(NOT (".lib" IN_LIST CMAKE_FIND_LIBRARY_SUFFIXES))
-        set(CMAKE_FIND_LIBRARY_SUFFIXES "${CMAKE_FIND_LIBRARY_SUFFIXES};.lib")
-    endif()
-
-    set(Vulkan_INCLUDE_DIRS "$ENV{VULKAN_SDK}/Include")
-
-    # 64-bit
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(Vulkan_LIBRARIES "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
-        find_program(Vulkan_GLSLC_EXECUTABLE
-                NAMES glslc
-                HINTS "$ENV{VULKAN_SDK}/Bin"
-                )
-    # 32-bit
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(Vulkan_LIBRARIES "$ENV{VULKAN_SDK}/Lib32/vulkan-1.lib")
-
-        find_program(Vulkan_GLSLC_EXECUTABLE
-                NAMES glslc
-                HINTS "$ENV{VULKAN_SDK}/Bin32"
-                )
-    endif()
-
-elseif(ANDROID)
-
-    if(${ANDROID_PLATFORM} LESS 24)
-        message(FATAL_ERROR "Android version ${ANDROID_PLATFORM} does not support Vulkan. Only API version 24 and above (Android 7.0)")
-    endif()
-
-elseif(UNIX)
-
-    if(DEFINED ENV{VULKAN_SDK})
-        if(NOT IS_DIRECTORY "$ENV{VULKAN_SDK}")
-            message(FATAL_ERROR "Environment variable VULKAN_SDK does not point to valid directory, it points to '$ENV{VULKAN_SDK}'")
-        endif()
-    endif()
-
-    find_path(Vulkan_INCLUDE_DIRS
-            NAMES vulkan/vulkan.h
-            HINTS "$ENV{VULKAN_SDK}/include")
-    find_library(Vulkan_LIBRARIES
-            NAMES vulkan
-            HINTS "$ENV{VULKAN_SDK}/lib")
-    find_program(Vulkan_GLSLC_EXECUTABLE
-            NAMES glslc
-            HINTS "$ENV{VULKAN_SDK}/bin")
-endif()
-
-if(NOT TARGET Vulkan::Vulkan)
-    add_library(Vulkan::Vulkan UNKNOWN IMPORTED)
-    set_target_properties(Vulkan::Vulkan PROPERTIES
-            IMPORTED_LOCATION "${Vulkan_LIBRARIES}"
-            INTERFACE_INCLUDE_DIRECTORIES "${Vulkan_INCLUDE_DIRS}")
-endif()
-
-if(Vulkan_GLSLC_EXECUTABLE AND NOT TARGET Vulkan::glslc)
-    add_executable(Vulkan::glslc IMPORTED)
-    set_property(TARGET Vulkan::glslc PROPERTY IMPORTED_LOCATION "${Vulkan_GLSLC_EXECUTABLE}")
-endif()
-
-
+add_subdirectory(lib)
 
 #--------------------------------
-# Test code
+# Source
 #--------------------------------
 
-add_executable(VulkanHppTest main.cpp)
+file(GLOB_RECURSE PROJECT_SOURCE src/*.hpp src/*.cpp src/*.h src/*.c)
+add_library(Vulkan_Template STATIC ${PROJECT_SOURCE})
+target_include_directories(Vulkan_Template PUBLIC src/)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") # GCC / MinGW
-    target_link_libraries(VulkanHppTest -static-libgcc -static-libstdc++)
+    target_link_libraries(Vulkan_Template -static-libgcc -static-libstdc++)
 endif()
 
-target_link_libraries(VulkanHppTest Vulkan::Vulkan)
+target_link_libraries(Vulkan_Template Vulkan::Vulkan)
+
+#--------------------------------
+# Tests
+#--------------------------------
+
+if(BUILD_TESTING)
+    include(CTest)
+    enable_testing()
+
+    add_subdirectory(tests)
+endif()
