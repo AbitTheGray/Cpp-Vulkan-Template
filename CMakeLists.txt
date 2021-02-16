@@ -6,20 +6,22 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 cmake_policy(SET CMP0077 NEW) # set() overrides option()
 
-#--------------------------------
-# Debug Options
-#--------------------------------
 
-add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>") # Define DEBUG in Debug builds
 
 #--------------------------------
 # Compiler configuration
 #--------------------------------
 
-if(MINGW)
-    message(NOTICE "MinGW detected, setting compilation to Windows")
+add_compile_options("$<$<CONFIG:DEBUG>:-DDEBUG>") # Define DEBUG in Debug builds
+
+if(MINGW AND UNIX) # Enable cross-compilation from Linux for Windows
+    message(NOTICE "MinGW detected, setting compilation for windows")
     set(WIN32 ON)
 endif()
+
+include(cmake/detect_pointer_size.cmake)
+
+
 
 #--------------------------------
 # 32-bit / 64-bit detection
@@ -61,11 +63,15 @@ COMPILE_TIME_ASSERT(sizeof(void*), 8) // SIZEOF_VOID_P 8
     message(NOTICE "CMAKE_SIZEOF_VOID_P: ${CMAKE_SIZEOF_VOID_P}")
 endif()
 
+
+
 #--------------------------------
 # External libraries
 #--------------------------------
 
 add_subdirectory(lib)
+
+
 
 #--------------------------------
 # Source
@@ -81,12 +87,13 @@ endif()
 
 target_link_libraries(Vulkan_Template Vulkan::Vulkan)
 
+
+
 #--------------------------------
 # Tests
 #--------------------------------
 
 if(BUILD_TESTING)
-    include(CTest)
     enable_testing()
 
     add_subdirectory(tests)
