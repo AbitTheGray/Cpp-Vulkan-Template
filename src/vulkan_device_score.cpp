@@ -1,5 +1,7 @@
 #include "vulkan_device_score.hpp"
 
+#include <optional>
+
 enum class vulkanQueueUseType : uint8_t
 {
     Render = 0,
